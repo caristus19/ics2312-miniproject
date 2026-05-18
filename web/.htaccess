@@ -1,0 +1,4 @@
+RewriteEngine On
+
+# Route directory access to register.php when directory indexing is disabled.
+DirectoryIndex register.php

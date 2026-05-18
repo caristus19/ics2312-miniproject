@@ -1,0 +1,1642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File-to-Web: A Four-Phase PHP Mini-Project</title>
+    <style>
+        :root {
+            --color-primary: #1B4F8A;
+            --color-secondary: #2E8B57;
+            --color-primary-soft: #e9f1fb;
+            --color-secondary-soft: #eaf7f0;
+            --color-surface: #ffffff;
+            --color-surface-muted: #f6f8fb;
+            --color-border: #d6dce5;
+            --color-text: #163047;
+            --color-text-soft: #4a6072;
+            --color-accent: #d7e7ff;
+            --color-warn: #a14b1a;
+            --color-danger: #8f1d1d;
+            --color-code-bg: #1E1E2E;
+            --color-code-border: #2f3147;
+            --color-code-text: #f4f4fa;
+            --color-code-key: #89ddff;
+            --color-code-string: #c3e88d;
+            --color-code-func: #82aaff;
+            --color-code-tag: #f78c6c;
+            --color-code-comment: #7f8aa3;
+            --shadow-soft: 0 14px 36px rgba(27, 79, 138, 0.10);
+            --shadow-card: 0 8px 20px rgba(10, 30, 60, 0.08);
+            --radius-lg: 22px;
+            --radius-md: 14px;
+            --radius-sm: 10px;
+            --space-1: 0.25rem;
+            --space-2: 0.5rem;
+            --space-3: 0.75rem;
+            --space-4: 1rem;
+            --space-5: 1.5rem;
+            --space-6: 2rem;
+            --space-7: 3rem;
+            --space-8: 4rem;
+            --font-body: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            --font-mono: "Cascadia Code", Consolas, "Courier New", monospace;
+            --sidebar-width: 280px;
+            --content-max: 980px;
+            --print-font-size: 11pt;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--font-body);
+            color: var(--color-text);
+            background:
+                radial-gradient(circle at top left, rgba(46, 139, 87, 0.12), transparent 22rem),
+                radial-gradient(circle at top right, rgba(27, 79, 138, 0.18), transparent 24rem),
+                linear-gradient(180deg, #f8fbff 0%, #f2f7fb 100%);
+        }
+
+        a {
+            color: var(--color-primary);
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: var(--sidebar-width) 1fr;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            position: sticky;
+            top: 0;
+            align-self: start;
+            height: 100vh;
+            overflow-y: auto;
+            padding: var(--space-6) var(--space-5);
+            border-right: 1px solid var(--color-border);
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+        }
+
+        .sidebar h1 {
+            margin: 0 0 var(--space-3);
+            font-size: 1.3rem;
+            line-height: 1.25;
+            color: var(--color-primary);
+        }
+
+        .sidebar p {
+            margin: 0 0 var(--space-5);
+            color: var(--color-text-soft);
+            font-size: 0.95rem;
+        }
+
+        .sidebar nav {
+            display: grid;
+            gap: var(--space-2);
+        }
+
+        .sidebar nav a {
+            text-decoration: none;
+            color: var(--color-text);
+            padding: 0.7rem 0.8rem;
+            border-radius: var(--radius-sm);
+            transition: background 0.2s ease, transform 0.2s ease, color 0.2s ease;
+        }
+
+        .sidebar nav a:hover,
+        .sidebar nav a:focus-visible {
+            background: var(--color-primary-soft);
+            color: var(--color-primary);
+            transform: translateX(2px);
+        }
+
+        .sidebar nav a.active {
+            background: linear-gradient(135deg, var(--color-primary), #2c6cb0);
+            color: #ffffff;
+            box-shadow: var(--shadow-card);
+        }
+
+        .checklist {
+            margin-top: var(--space-6);
+            padding: var(--space-4);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            background: var(--color-surface-muted);
+        }
+
+        .checklist h2 {
+            margin: 0 0 var(--space-3);
+            font-size: 1rem;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            margin: 0 0 var(--space-2);
+        }
+
+        .check-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .check-item input {
+            inline-size: 1rem;
+            block-size: 1rem;
+            accent-color: var(--color-secondary);
+        }
+
+        .content {
+            padding: var(--space-7) var(--space-6);
+        }
+
+        .header-banner {
+            max-width: var(--content-max);
+            margin: 0 auto var(--space-7);
+            padding: var(--space-7);
+            border-radius: calc(var(--radius-lg) + 4px);
+            background:
+                linear-gradient(135deg, rgba(27, 79, 138, 0.96), rgba(46, 139, 87, 0.92)),
+                linear-gradient(180deg, #1B4F8A, #2E8B57);
+            color: #ffffff;
+            box-shadow: var(--shadow-soft);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header-banner::after {
+            content: "";
+            position: absolute;
+            inset: auto -4rem -5rem auto;
+            width: 18rem;
+            height: 18rem;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 50%;
+        }
+
+        .eyebrow {
+            margin: 0 0 var(--space-3);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+
+        .header-banner h2 {
+            margin: 0 0 var(--space-4);
+            font-size: clamp(2rem, 4vw, 3.3rem);
+            line-height: 1.1;
+            max-width: 14ch;
+        }
+
+        .header-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-3);
+            font-size: 0.98rem;
+        }
+
+        .header-pill {
+            padding: 0.55rem 0.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.10);
+        }
+
+        .section {
+            max-width: var(--content-max);
+            margin: 0 auto var(--space-7);
+            scroll-margin-top: 1.5rem;
+        }
+
+        .card {
+            background: var(--color-surface);
+            border: 1px solid rgba(214, 220, 229, 0.85);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            padding: var(--space-6);
+        }
+
+        .section h3 {
+            margin-top: 0;
+            margin-bottom: var(--space-3);
+            color: var(--color-primary);
+            font-size: 1.8rem;
+        }
+
+        .section-intro {
+            margin: 0 0 var(--space-5);
+            color: var(--color-text-soft);
+            font-size: 1.02rem;
+        }
+
+        .grid-two {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: var(--space-5);
+        }
+
+        .grid-three {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: var(--space-4);
+        }
+
+        .mini-card {
+            padding: var(--space-4);
+            background: var(--color-surface-muted);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+        }
+
+        .mini-card h4 {
+            margin-top: 0;
+            margin-bottom: var(--space-2);
+            color: var(--color-primary);
+        }
+
+        .timeline-table,
+        .rubric-table,
+        .contract-table,
+        .complexity-table,
+        .validation-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: var(--space-4);
+            font-size: 0.96rem;
+        }
+
+        .timeline-table th,
+        .timeline-table td,
+        .rubric-table th,
+        .rubric-table td,
+        .contract-table th,
+        .contract-table td,
+        .complexity-table th,
+        .complexity-table td,
+        .validation-table th,
+        .validation-table td {
+            border: 1px solid var(--color-border);
+            padding: 0.8rem;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .timeline-table th,
+        .rubric-table th,
+        .contract-table th,
+        .complexity-table th,
+        .validation-table th {
+            background: var(--color-primary-soft);
+            color: var(--color-primary);
+        }
+
+        .bar-chart {
+            margin-top: var(--space-5);
+            display: grid;
+            gap: var(--space-3);
+        }
+
+        .bar-row {
+            display: grid;
+            grid-template-columns: 9rem 1fr 3rem;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .bar-track {
+            height: 1rem;
+            border-radius: 999px;
+            background: #e9eef5;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+        }
+
+        .code-block {
+            background: var(--color-code-bg);
+            border: 1px solid var(--color-code-border);
+            border-radius: var(--radius-md);
+            padding: var(--space-4);
+            overflow-x: auto;
+            margin: var(--space-4) 0;
+        }
+
+        .code-block pre {
+            margin: 0;
+            font-family: var(--font-mono);
+            font-size: 0.93rem;
+            line-height: 1.55;
+            color: var(--color-code-text);
+        }
+
+        .c-comment {
+            color: var(--color-code-comment);
+        }
+
+        .c-key {
+            color: var(--color-code-key);
+        }
+
+        .c-string {
+            color: var(--color-code-string);
+        }
+
+        .c-func {
+            color: var(--color-code-func);
+        }
+
+        .c-tag {
+            color: var(--color-code-tag);
+        }
+
+        .steps {
+            counter-reset: step;
+            display: grid;
+            gap: var(--space-4);
+        }
+
+        .step {
+            position: relative;
+            padding: var(--space-4) var(--space-4) var(--space-4) 4rem;
+            background: var(--color-surface-muted);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+        }
+
+        .step::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 1rem;
+            top: 1rem;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: #fff;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            font-weight: 700;
+        }
+
+        .mock-shot {
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
+            background: #fbfcfe;
+            overflow: hidden;
+            margin-top: var(--space-5);
+        }
+
+        .mock-shot-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid var(--color-border);
+            background: linear-gradient(180deg, #f0f4fa, #e8edf5);
+        }
+
+        .mock-dot {
+            width: 0.75rem;
+            height: 0.75rem;
+            border-radius: 50%;
+            background: #c7d0dc;
+        }
+
+        .mock-shot-body {
+            padding: var(--space-5);
+            background: #ffffff;
+        }
+
+        .status-pass {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            border-radius: 999px;
+            background: #e9f8ef;
+            color: var(--color-secondary);
+            font-weight: 700;
+        }
+
+        .signature-list {
+            display: grid;
+            gap: var(--space-3);
+        }
+
+        .signature-item {
+            padding: var(--space-3);
+            background: var(--color-surface-muted);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            font-family: var(--font-mono);
+            font-size: 0.93rem;
+        }
+
+        .spec-list {
+            padding-left: 1.1rem;
+        }
+
+        .spec-list li {
+            margin-bottom: 0.5rem;
+        }
+
+        details {
+            margin-top: var(--space-4);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            background: var(--color-surface-muted);
+            overflow: hidden;
+        }
+
+        summary {
+            cursor: pointer;
+            padding: 1rem 1.1rem;
+            font-weight: 700;
+            color: var(--color-primary);
+            background: linear-gradient(180deg, #f9fbfe, #f2f6fb);
+        }
+
+        details > div {
+            padding: var(--space-4);
+        }
+
+        .io-pill {
+            display: inline-block;
+            margin-right: var(--space-2);
+            margin-bottom: var(--space-2);
+            padding: 0.35rem 0.65rem;
+            border-radius: 999px;
+            background: var(--color-accent);
+            color: var(--color-primary);
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+
+        .diagram-row {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: var(--space-4);
+            align-items: center;
+            margin-top: var(--space-5);
+        }
+
+        .diagram-box {
+            padding: var(--space-4);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
+            background: #ffffff;
+            text-align: center;
+            box-shadow: var(--shadow-card);
+        }
+
+        .diagram-box strong {
+            display: block;
+            margin-bottom: var(--space-2);
+            color: var(--color-primary);
+        }
+
+        .arrow-box {
+            text-align: center;
+            font-size: 2rem;
+            color: var(--color-secondary);
+        }
+
+        .exception-stack {
+            display: grid;
+            gap: var(--space-3);
+            margin-top: var(--space-4);
+        }
+
+        .exception-node {
+            padding: var(--space-4);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
+            background: linear-gradient(180deg, #ffffff, #f6fbff);
+        }
+
+        .exception-child {
+            margin-left: 1.5rem;
+            border-left: 4px solid var(--color-secondary);
+            padding-left: 1rem;
+        }
+
+        .callout {
+            margin-top: var(--space-4);
+            padding: 1rem 1.1rem;
+            border-left: 4px solid var(--color-secondary);
+            background: var(--color-secondary-soft);
+            border-radius: var(--radius-sm);
+        }
+
+        .warning {
+            border-left-color: var(--color-warn);
+            background: #fff5eb;
+        }
+
+        .danger {
+            border-left-color: var(--color-danger);
+            background: #fff0f0;
+        }
+
+        .trace-grid {
+            display: grid;
+            gap: var(--space-3);
+            margin-top: var(--space-4);
+        }
+
+        .trace-row {
+            display: grid;
+            grid-template-columns: 6rem 1fr 1fr;
+            gap: var(--space-3);
+            padding: var(--space-3);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            background: #ffffff;
+        }
+
+        .trace-row strong {
+            color: var(--color-primary);
+        }
+
+        .resource-list {
+            display: grid;
+            gap: var(--space-3);
+        }
+
+        .resource-item {
+            padding: var(--space-4);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            background: #ffffff;
+        }
+
+        .footer-note {
+            margin-top: var(--space-5);
+            color: var(--color-text-soft);
+            font-size: 0.93rem;
+        }
+
+        @media (max-width: 1200px) {
+            .grid-three {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: relative;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--color-border);
+            }
+
+            .content {
+                padding: var(--space-6) var(--space-4);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .grid-two,
+            .grid-three,
+            .diagram-row {
+                grid-template-columns: 1fr;
+            }
+
+            .bar-row,
+            .trace-row {
+                grid-template-columns: 1fr;
+            }
+
+            .header-banner {
+                padding: var(--space-6);
+            }
+        }
+
+        @media print {
+            body {
+                background: #ffffff;
+                font-size: var(--print-font-size);
+            }
+
+            .layout {
+                display: block;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .content {
+                padding: 0;
+            }
+
+            .header-banner,
+            .card,
+            .mini-card,
+            .resource-item,
+            .diagram-box,
+            .trace-row,
+            .signature-item {
+                box-shadow: none;
+            }
+
+            details {
+                break-inside: avoid;
+            }
+
+            details[open] > div,
+            details > div {
+                display: block !important;
+            }
+
+            details summary {
+                list-style: none;
+            }
+
+            details summary::-webkit-details-marker {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <h1>ICS/ECE 2312</h1>
+            <p>File-to-Web: A Four-Phase PHP Mini-Project for JKUAT ECE Year 3 Semester 2.</p>
+
+            <nav aria-label="Section navigation">
+                <a href="#overview">1. Project Overview</a>
+                <a href="#submission">2. How to Submit</a>
+                <a href="#phase1">3. Phase 1: File Handling</a>
+                <a href="#phase2">4. Phase 2: Search &amp; Sort</a>
+                <a href="#phase3">5. Phase 3: Web Form</a>
+                <a href="#phase4">6. Phase 4: Error Handling</a>
+                <a href="#grading">7. Grading &amp; Integrity</a>
+                <a href="#resources">8. Resources &amp; Support</a>
+            </nav>
+
+            <section class="checklist" aria-labelledby="progress-title">
+                <h2 id="progress-title">Progress Checklist</h2>
+
+                <label class="check-item">
+                    <input type="checkbox" data-phase="phase1">
+                    <span>Phase 1 complete</span>
+                </label>
+
+                <label class="check-item">
+                    <input type="checkbox" data-phase="phase2">
+                    <span>Phase 2 complete</span>
+                </label>
+
+                <label class="check-item">
+                    <input type="checkbox" data-phase="phase3">
+                    <span>Phase 3 complete</span>
+                </label>
+
+                <label class="check-item">
+                    <input type="checkbox" data-phase="phase4">
+                    <span>Phase 4 complete</span>
+                </label>
+            </section>
+        </aside>
+
+        <main class="content">
+            <header class="header-banner">
+                <p class="eyebrow">ICS/ECE 2312 Structured Programming</p>
+                <h2>File-to-Web: A Four-Phase PHP Mini-Project</h2>
+                <div class="header-meta">
+                    <span class="header-pill">Institution: JKUAT</span>
+                    <span class="header-pill">Programme: ECE Year 3 Sem 2</span>
+                    <span class="header-pill">Template Repo: https://github.com/YOUR-ORG/ics2312-miniproject</span>
+                </div>
+            </header>
+
+            <section id="overview" class="section">
+                <div class="card">
+                    <h3>Section 1 — Project Overview</h3>
+                    <p class="section-intro">
+                        This mini-project connects core PHP programming ideas across file handling, algorithms,
+                        web integration, and error handling. It exists to help you move from isolated lab concepts
+                        into one coherent workflow: store data, process it, validate user input, and defend your
+                        code against failure.
+                    </p>
+
+                    <div class="grid-three">
+                        <article class="mini-card">
+                            <h4>Why this project exists</h4>
+                            <p>It consolidates Weeks 10 to 13 into one practical submission that mirrors how PHP applications evolve from raw data scripts into browser-facing tools.</p>
+                        </article>
+                        <article class="mini-card">
+                            <h4>What you will practice</h4>
+                            <p>CSV file management, search and sorting algorithms, server-side validation, safer file I/O, and exception-based debugging.</p>
+                        </article>
+                        <article class="mini-card">
+                            <h4>How you will be graded</h4>
+                            <p>Every Pull Request to <code>main</code> triggers an autograder. A detailed rubric also supports manual review where needed.</p>
+                        </article>
+                    </div>
+
+                    <table class="timeline-table">
+                        <thead>
+                            <tr>
+                                <th>Phase</th>
+                                <th>Week</th>
+                                <th>Topic</th>
+                                <th>Deliverable</th>
+                                <th>Due</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Phase 1</td>
+                                <td>Week 10</td>
+                                <td>File Handling</td>
+                                <td>Complete <code>FileHandler.php</code></td>
+                                <td>Lecturer to specify</td>
+                            </tr>
+                            <tr>
+                                <td>Phase 2</td>
+                                <td>Week 11</td>
+                                <td>Algorithms &amp; Sorting</td>
+                                <td>Complete <code>SearchSorter.php</code></td>
+                                <td>Lecturer to specify</td>
+                            </tr>
+                            <tr>
+                                <td>Phase 3</td>
+                                <td>Week 12</td>
+                                <td>PHP Web Integration</td>
+                                <td>Complete <code>FormValidator.php</code>, <code>register.php</code>, and <code>process.php</code></td>
+                                <td>Lecturer to specify</td>
+                            </tr>
+                            <tr>
+                                <td>Phase 4</td>
+                                <td>Week 13</td>
+                                <td>Error Handling &amp; Debugging</td>
+                                <td>Complete <code>ErrorHandler.php</code></td>
+                                <td>Lecturer to specify</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="bar-chart" aria-label="Marks breakdown chart">
+                        <div class="bar-row">
+                            <strong>Phase 1</strong>
+                            <div class="bar-track"><div class="bar-fill" style="width: 25%;"></div></div>
+                            <span>25</span>
+                        </div>
+                        <div class="bar-row">
+                            <strong>Phase 2</strong>
+                            <div class="bar-track"><div class="bar-fill" style="width: 25%;"></div></div>
+                            <span>25</span>
+                        </div>
+                        <div class="bar-row">
+                            <strong>Phase 3</strong>
+                            <div class="bar-track"><div class="bar-fill" style="width: 25%;"></div></div>
+                            <span>25</span>
+                        </div>
+                        <div class="bar-row">
+                            <strong>Phase 4</strong>
+                            <div class="bar-track"><div class="bar-fill" style="width: 25%;"></div></div>
+                            <span>25</span>
+                        </div>
+                    </div>
+
+                    <div class="callout">
+                        Total marks: <strong>100</strong>. Each phase is weighted equally, so steady progress across all four phases is the safest path to a strong final score.
+                    </div>
+                </div>
+            </section>
+
+            <section id="submission" class="section">
+                <div class="card">
+                    <h3>Section 2 — How to Submit</h3>
+                    <p class="section-intro">
+                        Follow this workflow exactly. It keeps your Git history clean, makes the autograder work smoothly,
+                        and gives the lecturer a consistent way to review submissions.
+                    </p>
+
+                    <div class="steps">
+                        <div class="step">
+                            <strong>Fork the template repository</strong>
+                            <p>Use the placeholder template URL below. Replace <code>YOUR-ORG</code> only when your lecturer gives the final location.</p>
+                            <div class="code-block">
+                                <pre><span class="c-comment"># Template repository</span>
+<span class="c-string">https://github.com/YOUR-ORG/ics2312-miniproject</span></pre>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <strong>Clone your fork locally</strong>
+                            <div class="code-block">
+                                <pre><span class="c-key">git</span> clone <span class="c-string">https://github.com/YOUR-USERNAME/ics2312-miniproject.git</span>
+<span class="c-key">cd</span> ics2312-miniproject</pre>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <strong>Create a feature branch</strong>
+                            <p>Your branch name should reflect your registration number.</p>
+                            <div class="code-block">
+                                <pre><span class="c-key">git</span> checkout -b <span class="c-string">phase/your-reg-no</span></pre>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <strong>Implement the stubs in <code>src/</code> and the web pages</strong>
+                            <p>Read the PHPDoc comments, follow the tests, and preserve all class names, method names, and signatures.</p>
+                        </div>
+
+                        <div class="step">
+                            <strong>Run tests locally</strong>
+                            <div class="code-block">
+                                <pre><span class="c-key">composer</span> install
+<span class="c-key">composer</span> test</pre>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <strong>Push and open a Pull Request</strong>
+                            <div class="code-block">
+                                <pre><span class="c-key">git</span> add .
+<span class="c-key">git</span> commit -m <span class="c-string">"Implement ICS2312 mini-project"</span>
+<span class="c-key">git</span> push origin <span class="c-string">phase/your-reg-no</span></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mock-shot" aria-label="Mock passing pull request screenshot">
+                        <div class="mock-shot-bar">
+                            <span class="mock-dot"></span>
+                            <span class="mock-dot"></span>
+                            <span class="mock-dot"></span>
+                            <strong>Pull Request Checks</strong>
+                        </div>
+                        <div class="mock-shot-body">
+                            <p><span class="status-pass">All checks passed</span></p>
+                            <p><strong>Autograde / PHPUnit Autograde</strong></p>
+                            <p>Status: success</p>
+                            <p>12 tests, 24 assertions, 0 failures</p>
+                        </div>
+                    </div>
+
+                    <h4>Expected PR comment format</h4>
+                    <div class="code-block">
+                        <pre><span class="c-tag">##</span> Autograder result: PASS
+
+Workflow status: <span class="c-string">success</span>
+
+<span class="c-tag">###</span> PHPUnit output
+<span class="c-comment">```text</span>
+Phase 1
+ ✔ Write creates file
+ ✔ Write and read round trip
+
+Phase 2
+ ✔ Bubble sort ascending
+ ...
+<span class="c-comment">```</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="phase1" class="section">
+                <div class="card">
+                    <h3>Section 3 — Phase 1: File Handling (Week 10)</h3>
+                    <p class="section-intro">
+                        In this phase, you will convert structured data between CSV text and associative PHP arrays.
+                        The key idea is that files are sequential streams, so you must manage modes, headers,
+                        row order, and error handling intentionally.
+                    </p>
+
+                    <div class="grid-two">
+                        <article class="mini-card">
+                            <h4>Learning objectives</h4>
+                            <ul class="spec-list">
+                                <li>Use <code>fopen()</code>, <code>fgetcsv()</code>, and <code>fputcsv()</code> correctly.</li>
+                                <li>Choose the correct file mode for overwriting versus appending.</li>
+                                <li>Transform CSV rows into associative arrays using a header row.</li>
+                                <li>Handle missing files and empty files gracefully.</li>
+                            </ul>
+                        </article>
+
+                        <article class="mini-card">
+                            <h4>Required method signatures</h4>
+                            <div class="signature-list">
+                                <div class="signature-item">public function writeRecord(string $filePath, array $record): bool</div>
+                                <div class="signature-item">public function readAllRecords(string $filePath): array</div>
+                                <div class="signature-item">public function appendRecord(string $filePath, array $record): bool</div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <table class="contract-table">
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>Input</th>
+                                <th>Output</th>
+                                <th>Contract</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>writeRecord()</code></td>
+                                <td>Path + one associative record</td>
+                                <td><code>bool</code></td>
+                                <td>Create or overwrite a CSV file, write the header row, then write exactly one data row.</td>
+                            </tr>
+                            <tr>
+                                <td><code>readAllRecords()</code></td>
+                                <td>Path to CSV file</td>
+                                <td><code>array</code></td>
+                                <td>Return all rows as associative arrays using the first row as the header definition.</td>
+                            </tr>
+                            <tr>
+                                <td><code>appendRecord()</code></td>
+                                <td>Path + one associative record</td>
+                                <td><code>bool</code></td>
+                                <td>Add a new row at the end of the CSV file and write headers first if the file is new or empty.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h4>CSV format specification</h4>
+                    <p>
+                        The CSV file stores student records with the following columns:
+                    </p>
+                    <p>
+                        <span class="io-pill">name: string</span>
+                        <span class="io-pill">reg_no: string</span>
+                        <span class="io-pill">age: integer-like string</span>
+                        <span class="io-pill">email: string</span>
+                        <span class="io-pill">mark1 to mark4: numeric strings</span>
+                    </p>
+
+                    <div class="callout">
+                        Constraint: preserve header order. If the header row is <code>name,reg_no,age,email,mark1,mark2,mark3,mark4</code>,
+                        then every row must follow that exact order.
+                    </div>
+
+                    <details open>
+                        <summary>Worked example: CSV input to PHP array output</summary>
+                        <div>
+                            <div class="code-block">
+                                <pre><span class="c-comment"># CSV file contents</span>
+name,reg_no,age,email,mark1,mark2,mark3,mark4
+Grace Wanjiku,EN271-0001-2022,21,grace@example.com,78,82,80,75
+Brian Otieno,EN271-0002-2022,22,brian@example.com,65,71,69,73</pre>
+                            </div>
+
+                            <div class="code-block">
+                                <pre><span class="c-comment"># Expected PHP array shape</span>
+[
+    [
+        <span class="c-string">'name'</span> =&gt; <span class="c-string">'Grace Wanjiku'</span>,
+        <span class="c-string">'reg_no'</span> =&gt; <span class="c-string">'EN271-0001-2022'</span>,
+        <span class="c-string">'age'</span> =&gt; <span class="c-string">'21'</span>,
+        <span class="c-string">'email'</span> =&gt; <span class="c-string">'grace@example.com'</span>,
+        <span class="c-string">'mark1'</span> =&gt; <span class="c-string">'78'</span>,
+        <span class="c-string">'mark2'</span> =&gt; <span class="c-string">'82'</span>,
+        <span class="c-string">'mark3'</span> =&gt; <span class="c-string">'80'</span>,
+        <span class="c-string">'mark4'</span> =&gt; <span class="c-string">'75'</span>
+    ],
+    [
+        <span class="c-string">'name'</span> =&gt; <span class="c-string">'Brian Otieno'</span>,
+        <span class="c-string">'reg_no'</span> =&gt; <span class="c-string">'EN271-0002-2022'</span>,
+        <span class="c-string">'age'</span> =&gt; <span class="c-string">'22'</span>,
+        <span class="c-string">'email'</span> =&gt; <span class="c-string">'brian@example.com'</span>,
+        <span class="c-string">'mark1'</span> =&gt; <span class="c-string">'65'</span>,
+        <span class="c-string">'mark2'</span> =&gt; <span class="c-string">'71'</span>,
+        <span class="c-string">'mark3'</span> =&gt; <span class="c-string">'69'</span>,
+        <span class="c-string">'mark4'</span> =&gt; <span class="c-string">'73'</span>
+    ]
+]</pre>
+                            </div>
+                        </div>
+                    </details>
+
+                    <div class="grid-two">
+                        <article class="mini-card">
+                            <h4>Common mistakes to avoid</h4>
+                            <ul class="spec-list">
+                                <li>Using <code>explode(',')</code> instead of <code>fgetcsv()</code>, which breaks on quoted values.</li>
+                                <li>Forgetting to close file handles.</li>
+                                <li>Using mode <code>'w'</code> when you meant to append with <code>'a'</code>.</li>
+                                <li>Returning indexed rows instead of associative arrays.</li>
+                            </ul>
+                        </article>
+
+                        <article class="mini-card">
+                            <h4>Mark allocation</h4>
+                            <ul class="spec-list">
+                                <li><code>writeRecord()</code>: 8 marks</li>
+                                <li><code>readAllRecords()</code>: 8 marks</li>
+                                <li><code>appendRecord()</code>: 7 marks</li>
+                                <li>Graceful error handling and coding discipline: 2 marks</li>
+                            </ul>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <section id="phase2" class="section">
+                <div class="card">
+                    <h3>Section 4 — Phase 2: Search &amp; Sort (Week 11)</h3>
+                    <p class="section-intro">
+                        This phase develops your algorithmic thinking. You will not only produce correct outputs,
+                        but also report iteration counts so you can compare how different sorting strategies behave
+                        on the same data.
+                    </p>
+
+                    <div class="grid-two">
+                        <article class="mini-card">
+                            <h4>Learning objectives</h4>
+                            <ul class="spec-list">
+                                <li>Understand the difference between linear and binary search.</li>
+                                <li>Implement bubble sort, selection sort, and insertion sort correctly.</li>
+                                <li>Build intuition for Big-O complexity using best, average, and worst cases.</li>
+                                <li>Relate nearly-sorted input to iteration count behavior.</li>
+                            </ul>
+                        </article>
+
+                        <article class="mini-card">
+                            <h4>Required method signatures</h4>
+                            <div class="signature-list">
+                                <div class="signature-item">public function linearSearch(array $items, int|string $target): int</div>
+                                <div class="signature-item">public function binarySearch(array $items, int|string $target): int</div>
+                                <div class="signature-item">public function bubbleSort(array $items): array</div>
+                                <div class="signature-item">public function selectionSort(array $items): array</div>
+                                <div class="signature-item">public function insertionSort(array $items): array</div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <table class="contract-table">
+                        <thead>
+                            <tr>
+                                <th>Algorithm</th>
+                                <th>Input</th>
+                                <th>Output</th>
+                                <th>Return type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Linear Search</td>
+                                <td>Indexed array + target</td>
+                                <td>Index of target or <code>-1</code></td>
+                                <td><code>int</code></td>
+                            </tr>
+                            <tr>
+                                <td>Binary Search</td>
+                                <td>Ascending sorted array + target</td>
+                                <td>Index of target or <code>-1</code></td>
+                                <td><code>int</code></td>
+                            </tr>
+                            <tr>
+                                <td>Bubble Sort</td>
+                                <td>Indexed array</td>
+                                <td>Sorted array + iteration count</td>
+                                <td><code>array</code></td>
+                            </tr>
+                            <tr>
+                                <td>Selection Sort</td>
+                                <td>Indexed array</td>
+                                <td>Sorted array + iteration count</td>
+                                <td><code>array</code></td>
+                            </tr>
+                            <tr>
+                                <td>Insertion Sort</td>
+                                <td>Indexed array</td>
+                                <td>Sorted array + iteration count</td>
+                                <td><code>array</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <table class="complexity-table">
+                        <thead>
+                            <tr>
+                                <th>Algorithm</th>
+                                <th>Best Case</th>
+                                <th>Average Case</th>
+                                <th>Worst Case</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Linear Search</td>
+                                <td>O(1)</td>
+                                <td>O(n)</td>
+                                <td>O(n)</td>
+                            </tr>
+                            <tr>
+                                <td>Binary Search</td>
+                                <td>O(1)</td>
+                                <td>O(log n)</td>
+                                <td>O(log n)</td>
+                            </tr>
+                            <tr>
+                                <td>Bubble Sort</td>
+                                <td>O(n) with optimization or O(n²) in naive form</td>
+                                <td>O(n²)</td>
+                                <td>O(n²)</td>
+                            </tr>
+                            <tr>
+                                <td>Selection Sort</td>
+                                <td>O(n²)</td>
+                                <td>O(n²)</td>
+                                <td>O(n²)</td>
+                            </tr>
+                            <tr>
+                                <td>Insertion Sort</td>
+                                <td>O(n)</td>
+                                <td>O(n²)</td>
+                                <td>O(n²)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="callout">
+                        Iteration count contract: each sort method must return
+                        <code>['sorted' =&gt; [...], 'iterations' =&gt; 0]</code>.
+                        The autograder uses both the sorted output and the numeric iteration count.
+                    </div>
+
+                    <details open>
+                        <summary>Trace table example: bubble sort on [5, 3, 1, 4, 2]</summary>
+                        <div class="trace-grid">
+                            <div class="trace-row">
+                                <strong>Pass 1</strong>
+                                <span>Start: [5, 3, 1, 4, 2]</span>
+                                <span>End: [3, 1, 4, 2, 5]</span>
+                            </div>
+                            <div class="trace-row">
+                                <strong>Pass 2</strong>
+                                <span>Start: [3, 1, 4, 2, 5]</span>
+                                <span>End: [1, 3, 2, 4, 5]</span>
+                            </div>
+                            <div class="trace-row">
+                                <strong>Pass 3</strong>
+                                <span>Start: [1, 3, 2, 4, 5]</span>
+                                <span>End: [1, 2, 3, 4, 5]</span>
+                            </div>
+                            <div class="trace-row">
+                                <strong>Pass 4</strong>
+                                <span>Start: [1, 2, 3, 4, 5]</span>
+                                <span>End: [1, 2, 3, 4, 5]</span>
+                            </div>
+                        </div>
+                    </details>
+
+                    <div class="grid-two">
+                        <article class="mini-card">
+                            <h4>Nearly-sorted data insight</h4>
+                            <p>Insertion sort usually performs fewer shifts and comparisons than bubble sort on nearly-sorted input. That is why one of the tests compares iteration counts on a nearly-sorted array.</p>
+                        </article>
+
+                        <article class="mini-card">
+                            <h4>Mark allocation</h4>
+                            <ul class="spec-list">
+                                <li>Search methods: 8 marks total</li>
+                                <li>Sorting methods: 16 marks total</li>
+                                <li>Correct iteration tracking: 1 mark</li>
+                            </ul>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <section id="phase3" class="section">
+                <div class="card">
+                    <h3>Section 5 — Phase 3: Web Form (Week 12)</h3>
+                    <p class="section-intro">
+                        In this phase, you connect browser input to PHP logic. The aim is not just to display a form,
+                        but to validate user input safely on the server and separate presentation from reusable logic.
+                    </p>
+
+                    <div class="grid-two">
+                        <article class="mini-card">
+                            <h4>Learning objectives</h4>
+                            <ul class="spec-list">
+                                <li>Differentiate between GET and POST in a practical form workflow.</li>
+                                <li>Validate user input on the server, not just in HTML.</li>
+                                <li>Separate view code from reusable validation methods.</li>
+                                <li>Escape rendered values to avoid accidental HTML injection.</li>
+                            </ul>
+                        </article>
+
+                        <article class="mini-card">
+                            <h4>What you must implement</h4>
+                            <ul class="spec-list">
+                                <li><code>web/register.php</code> should render the form and show field-level feedback.</li>
+                                <li><code>web/process.php</code> should receive submitted POST data and validate it.</li>
+                                <li><code>src/FormValidator.php</code> should contain the reusable validation rules.</li>
+                            </ul>
+                        </article>
+                    </div>
+
+                    <table class="validation-table">
+                        <thead>
+                            <tr>
+                                <th>Field</th>
+                                <th>Type</th>
+                                <th>Min</th>
+                                <th>Max</th>
+                                <th>Regex / Rule</th>
+                                <th>Error message guidance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Name</td>
+                                <td>string</td>
+                                <td>2 chars</td>
+                                <td>Reasonable human name length</td>
+                                <td><code>/^[A-Za-z\s'-]+$/</code></td>
+                                <td>Tell the user the name is too short or contains invalid characters.</td>
+                            </tr>
+                            <tr>
+                                <td>Email</td>
+                                <td>string</td>
+                                <td>Valid email structure</td>
+                                <td>Valid email structure</td>
+                                <td><code>filter_var(..., FILTER_VALIDATE_EMAIL)</code></td>
+                                <td>Explain that the email format is invalid.</td>
+                            </tr>
+                            <tr>
+                                <td>Age</td>
+                                <td>integer</td>
+                                <td>18</td>
+                                <td>100</td>
+                                <td>Inclusive numeric range check</td>
+                                <td>Explain whether the age is below minimum or above maximum.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h4>POST vs GET</h4>
+                    <div class="diagram-row">
+                        <div class="diagram-box">
+                            <strong>Browser Form</strong>
+                            <span>User enters name, email, and age.</span>
+                        </div>
+                        <div class="arrow-box" aria-hidden="true">→</div>
+                        <div class="diagram-box">
+                            <strong>PHP Processor</strong>
+                            <span><code>$_POST</code> receives the submitted data.</span>
+                        </div>
+                    </div>
+
+                    <div class="diagram-row">
+                        <div class="diagram-box">
+                            <strong>GET</strong>
+                            <span>Used mostly for reading or filtering data. Values appear in the URL.</span>
+                        </div>
+                        <div class="arrow-box" aria-hidden="true">⇄</div>
+                        <div class="diagram-box">
+                            <strong>POST</strong>
+                            <span>Preferred for form submissions that send user-entered data for processing.</span>
+                        </div>
+                    </div>
+
+                    <h4>Expected confirmation page output</h4>
+                    <div class="code-block">
+                        <pre><span class="c-tag">&lt;h1&gt;</span>Registration Successful<span class="c-tag">&lt;/h1&gt;</span>
+<span class="c-tag">&lt;p&gt;</span>Name: Grace Wanjiku<span class="c-tag">&lt;/p&gt;</span>
+<span class="c-tag">&lt;p&gt;</span>Email: grace.wanjiku@students.jkuat.ac.ke<span class="c-tag">&lt;/p&gt;</span>
+<span class="c-tag">&lt;p&gt;</span>Age: 21<span class="c-tag">&lt;/p&gt;</span></pre>
+                    </div>
+
+                    <div class="callout warning">
+                        Security note: always use <code>htmlspecialchars()</code> before echoing user-submitted data.
+                        Never trust <code>$_POST</code> values without validation.
+                    </div>
+
+                    <div class="mini-card">
+                        <h4>Mark allocation</h4>
+                        <ul class="spec-list">
+                            <li><code>validateName()</code>: 6 marks</li>
+                            <li><code>validateEmail()</code>: 5 marks</li>
+                            <li><code>validateAge()</code>: 5 marks</li>
+                            <li><code>validateAll()</code>: 4 marks</li>
+                            <li>Form integration and safe output handling: 5 marks</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="phase4" class="section">
+                <div class="card">
+                    <h3>Section 6 — Phase 4: Error Handling &amp; Debugging (Week 13)</h3>
+                    <p class="section-intro">
+                        This phase teaches defensive programming. Instead of letting PHP fail unpredictably,
+                        your code should detect unsafe situations early and raise clear exceptions that make
+                        debugging easier.
+                    </p>
+
+                    <div class="grid-two">
+                        <article class="mini-card">
+                            <h4>Learning objectives</h4>
+                            <ul class="spec-list">
+                                <li>Differentiate file errors from logical errors like division by zero.</li>
+                                <li>Use <code>try</code>, <code>catch</code>, and <code>finally</code> clearly.</li>
+                                <li>Throw meaningful exceptions instead of hiding failures.</li>
+                                <li>Understand how better error messages reduce debugging time.</li>
+                            </ul>
+                        </article>
+
+                        <article class="mini-card">
+                            <h4>What you must implement</h4>
+                            <div class="signature-list">
+                                <div class="signature-item">public function safeReadFile(string $filePath): string</div>
+                                <div class="signature-item">public function safeWriteFile(string $filePath, string $content): int</div>
+                                <div class="signature-item">public function safeDivide(int|float $dividend, int|float $divisor): float</div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <h4>Exception hierarchy idea</h4>
+                    <div class="exception-stack">
+                        <div class="exception-node">
+                            <strong>Exception</strong>
+                            <p>Base throwable type used for controlled application failures.</p>
+                        </div>
+                        <div class="exception-node exception-child">
+                            <strong>RuntimeException</strong>
+                            <p>Suitable for missing files, unreadable files, unwritable paths, and rejected zero divisors in this mini-project.</p>
+                        </div>
+                    </div>
+
+                    <details open>
+                        <summary>try-catch-finally example with annotations</summary>
+                        <div>
+                            <div class="code-block">
+                                <pre><span class="c-key">try</span> {
+    <span class="c-comment">// Attempt a risky action</span>
+    <span class="c-key">$contents</span> = <span class="c-key">$handler</span>-&gt;<span class="c-func">safeReadFile</span>(<span class="c-string">'students.csv'</span>);
+    <span class="c-func">echo</span> <span class="c-key">$contents</span>;
+} <span class="c-key">catch</span> (<span class="c-key">\RuntimeException</span> <span class="c-key">$e</span>) {
+    <span class="c-comment">// Explain the failure clearly</span>
+    <span class="c-func">echo</span> <span class="c-string">'Error: '</span> . <span class="c-key">$e</span>-&gt;<span class="c-func">getMessage</span>();
+} <span class="c-key">finally</span> {
+    <span class="c-comment">// Useful for cleanup or logging</span>
+    <span class="c-func">echo</span> <span class="c-string">'Operation finished.'</span>;
+}</pre>
+                            </div>
+                        </div>
+                    </details>
+
+                    <h4>Common PHP error categories</h4>
+                    <div class="grid-two">
+                        <article class="mini-card">
+                            <h4>Syntax errors</h4>
+                            <p>These happen before your script runs, for example a missing semicolon or unmatched brace.</p>
+                        </article>
+                        <article class="mini-card">
+                            <h4>Runtime errors</h4>
+                            <p>These happen while the script is running, such as trying to open a missing file.</p>
+                        </article>
+                        <article class="mini-card">
+                            <h4>Logical errors</h4>
+                            <p>The script runs, but the result is wrong because the algorithm or conditions are incorrect.</p>
+                        </article>
+                        <article class="mini-card">
+                            <h4>Fatal errors</h4>
+                            <p>These stop execution entirely, often due to severe problems like calling undefined functions.</p>
+                        </article>
+                    </div>
+
+                    <div class="callout danger">
+                        Error handling is not about hiding mistakes. It is about failing clearly and safely so the problem can be fixed quickly.
+                    </div>
+
+                    <div class="mini-card">
+                        <h4>Mark allocation</h4>
+                        <ul class="spec-list">
+                            <li><code>safeReadFile()</code>: 8 marks</li>
+                            <li><code>safeWriteFile()</code>: 8 marks</li>
+                            <li><code>safeDivide()</code>: 7 marks</li>
+                            <li>Exception quality and debugging clarity: 2 marks</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="grading" class="section">
+                <div class="card">
+                    <h3>Section 7 — Grading &amp; Academic Integrity</h3>
+                    <p class="section-intro">
+                        This section explains exactly what is checked, how marks are split, and what can reduce your score even if your code appears to work.
+                    </p>
+
+                    <table class="rubric-table">
+                        <thead>
+                            <tr>
+                                <th>Criteria</th>
+                                <th>Marks</th>
+                                <th>Autograded or Manual</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Phase 1 file creation, append logic, CSV reading</td>
+                                <td>25</td>
+                                <td>Mainly autograded</td>
+                            </tr>
+                            <tr>
+                                <td>Phase 2 search correctness, sort correctness, iteration counts</td>
+                                <td>25</td>
+                                <td>Autograded</td>
+                            </tr>
+                            <tr>
+                                <td>Phase 3 validation rules and web integration quality</td>
+                                <td>25</td>
+                                <td>Mixed autograded and manual</td>
+                            </tr>
+                            <tr>
+                                <td>Phase 4 exception behavior and defensive coding</td>
+                                <td>25</td>
+                                <td>Autograded</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h4>What the PR autograder checks</h4>
+                    <ul class="spec-list">
+                        <li>Whether your classes and methods exist with the correct names.</li>
+                        <li>Whether file operations behave correctly on temporary files and directories.</li>
+                        <li>Whether searches return correct indexes and missing values return <code>-1</code>.</li>
+                        <li>Whether sorting results are ascending and iteration counts are numeric.</li>
+                        <li>Whether validation returns <code>null</code> for valid values and errors for invalid ones.</li>
+                        <li>Whether exceptions are thrown on missing files, unwritable paths, and zero divisors.</li>
+                    </ul>
+
+                    <table class="rubric-table">
+                        <thead>
+                            <tr>
+                                <th>Penalty case</th>
+                                <th>Effect</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Late submission</td>
+                                <td>Handled according to the course policy.</td>
+                            </tr>
+                            <tr>
+                                <td>Copied code or repository sharing</td>
+                                <td>Academic misconduct procedures may apply.</td>
+                            </tr>
+                            <tr>
+                                <td>Not forking correctly or submitting the wrong branch</td>
+                                <td>May delay grading or result in a missing submission record.</td>
+                            </tr>
+                            <tr>
+                                <td>Editing protected tests to fake a pass</td>
+                                <td>May result in zero for the affected phase.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h4>Academic integrity declaration for PR description</h4>
+                    <div class="code-block">
+                        <pre>I confirm that this submission is my own work for ICS/ECE 2312.
+I have not copied another student's solution, and I understand the code I am submitting.</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="resources" class="section">
+                <div class="card">
+                    <h3>Section 8 — Resources &amp; Support</h3>
+                    <p class="section-intro">
+                        Use these references to unblock yourself quickly. They are especially useful when you know the concept
+                        but need to confirm exact PHP syntax or behavior.
+                    </p>
+
+                    <div class="resource-list">
+                        <article class="resource-item">
+                            <h4>Course LMS</h4>
+                            <p>Lecturer to provide the official LMS link for lecture slides, announcements, and deadlines.</p>
+                        </article>
+
+                        <article class="resource-item">
+                            <h4>Office hours</h4>
+                            <p>Lecturer and teaching assistant schedule to be inserted here. Bring your branch, error message, and test output when asking for help.</p>
+                        </article>
+
+                        <article class="resource-item">
+                            <h4>Recommended PHP documentation</h4>
+                            <ul class="spec-list">
+                                <li><a href="https://www.php.net/manual/en/function.fopen.php">php.net: fopen</a></li>
+                                <li><a href="https://www.php.net/manual/en/function.fgetcsv.php">php.net: fgetcsv</a></li>
+                                <li><a href="https://www.php.net/manual/en/function.fputcsv.php">php.net: fputcsv</a></li>
+                                <li><a href="https://www.php.net/manual/en/function.filter-var.php">php.net: filter_var</a></li>
+                                <li><a href="https://www.php.net/manual/en/language.exceptions.php">php.net: Exceptions</a></li>
+                            </ul>
+                        </article>
+                    </div>
+
+                    <h4>Quick-reference card: method signatures</h4>
+                    <div class="grid-two">
+                        <div class="signature-list">
+                            <div class="signature-item">FileHandler::writeRecord(string $filePath, array $record): bool</div>
+                            <div class="signature-item">FileHandler::readAllRecords(string $filePath): array</div>
+                            <div class="signature-item">FileHandler::appendRecord(string $filePath, array $record): bool</div>
+                            <div class="signature-item">SearchSorter::linearSearch(array $items, int|string $target): int</div>
+                            <div class="signature-item">SearchSorter::binarySearch(array $items, int|string $target): int</div>
+                        </div>
+                        <div class="signature-list">
+                            <div class="signature-item">SearchSorter::bubbleSort(array $items): array</div>
+                            <div class="signature-item">SearchSorter::selectionSort(array $items): array</div>
+                            <div class="signature-item">SearchSorter::insertionSort(array $items): array</div>
+                            <div class="signature-item">FormValidator::validateName(string $name): ?string</div>
+                            <div class="signature-item">FormValidator::validateEmail(string $email): ?string</div>
+                            <div class="signature-item">FormValidator::validateAge(int $age): ?string</div>
+                            <div class="signature-item">FormValidator::validateAll(array $input): array</div>
+                            <div class="signature-item">ErrorHandler::safeReadFile(string $filePath): string</div>
+                            <div class="signature-item">ErrorHandler::safeWriteFile(string $filePath, string $content): int</div>
+                            <div class="signature-item">ErrorHandler::safeDivide(int|float $dividend, int|float $divisor): float</div>
+                        </div>
+                    </div>
+
+                    <p class="footer-note">
+                        If you are stuck, start from the failing test message, then map it back to the PHPDoc comments in the stub file.
+                        The tests are telling you what contract your code must satisfy.
+                    </p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        (function () {
+            const navLinks = Array.from(document.querySelectorAll('.sidebar nav a'));
+            const sections = navLinks
+                .map((link) => document.querySelector(link.getAttribute('href')))
+                .filter(Boolean);
+
+            const observer = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach((entry) => {
+                        if (!entry.isIntersecting) {
+                            return;
+                        }
+
+                        const id = '#' + entry.target.id;
+                        navLinks.forEach((link) => {
+                            link.classList.toggle('active', link.getAttribute('href') === id);
+                        });
+                    });
+                },
+                {
+                    rootMargin: '-30% 0px -55% 0px',
+                    threshold: 0.1
+                }
+            );
+
+            sections.forEach((section) => observer.observe(section));
+
+            const checkboxes = document.querySelectorAll('input[type="checkbox"][data-phase]');
+            checkboxes.forEach((checkbox) => {
+                const key = 'ics2312-progress-' + checkbox.dataset.phase;
+                checkbox.checked = localStorage.getItem(key) === 'true';
+                checkbox.addEventListener('change', () => {
+                    localStorage.setItem(key, String(checkbox.checked));
+                });
+            });
+
+            if (window.matchMedia && window.matchMedia('print').matches) {
+                document.querySelectorAll('details').forEach((detail) => {
+                    detail.open = true;
+                });
+            }
+
+            window.addEventListener('beforeprint', () => {
+                document.querySelectorAll('details').forEach((detail) => {
+                    detail.open = true;
+                });
+            });
+        }());
+    </script>
+</body>
+</html>

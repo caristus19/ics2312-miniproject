@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+    bootstrap="vendor/autoload.php"
+    colors="true"
+    stopOnFailure="false"
+    cacheDirectory=".phpunit.cache"
+    executionOrder="default"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+>
+    <testsuites>
+        <testsuite name="Phase 1">
+            <file>tests/Phase1Test.php</file>
+        </testsuite>
+        <testsuite name="Phase 2">
+            <file>tests/Phase2Test.php</file>
+        </testsuite>
+        <testsuite name="Phase 3">
+            <file>tests/Phase3Test.php</file>
+        </testsuite>
+        <testsuite name="Phase 4">
+            <file>tests/Phase4Test.php</file>
+        </testsuite>
+    </testsuites>
+</phpunit>

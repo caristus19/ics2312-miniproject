@@ -1,0 +1,86 @@
+name: Autograde
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  autograde:
+    name: PHPUnit Autograde
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.1
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.1"
+          extensions: mbstring, fileinfo
+          coverage: none
+
+      - name: Detect Composer manifest
+        id: composer_check
+        run: |
+          if [ -f composer.json ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install Composer dependencies
+        if: steps.composer_check.outputs.present == 'true'
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Run PHPUnit test suite
+        id: phpunit
+        continue-on-error: false
+        run: |
+          mkdir -p build
+          vendor/bin/phpunit --testdox | tee build/phpunit-testdox.txt
+
+      - name: Upload test results artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phpunit-results
+          path: build/phpunit-testdox.txt
+          if-no-files-found: warn
+
+      - name: Post PR summary comment
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'build/phpunit-testdox.txt';
+            const status = '${{ job.status }}';
+            const passed = status === 'success';
+
+            let output = 'No test output file was generated.';
+            if (fs.existsSync(path)) {
+              output = fs.readFileSync(path, 'utf8');
+            }
+
+            const body = [
+              `## ${passed ? 'Autograder result: PASS' : 'Autograder result: FAIL'}`,
+              '',
+              `Workflow status: **${status}**`,
+              '',
+              '### PHPUnit output',
+              '```text',
+              output.length > 60000 ? `${output.slice(0, 60000)}\n[output truncated]` : output,
+              '```'
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body
+            });
