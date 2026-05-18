@@ -3,7 +3,7 @@
 **Repository:** `ics2312-miniproject`  
 **Course Code:** ICS/ECE 2312  
 **Semester:** Year 3, Semester 2  
-**Lecturer:** *[Insert Lecturer Name]*
+**Lecturer:** [Maxwell Ouma](https://maxwellokumu.github.io)
 
 ## Overview
 
@@ -156,6 +156,7 @@ If instructed by the lecturer, include an academic integrity statement in the Pu
 - Use `data/sample_students.csv` to understand the CSV format
 - Run `composer test` regularly as you work
 - Follow the detailed guide in [docs/SUBMISSION_GUIDE.md](docs/SUBMISSION_GUIDE.md)
+- Course platform: [Kioto iLMS](https://ilms.jkusaonline.co.ke)
 
 ## License
 
