@@ -6,7 +6,7 @@ This guide shows the expected workflow for completing and submitting the ICS/ECE
 
 Open the template repository:
 
-`https://github.com/YOUR-ORG/ics2312-miniproject`
+`https://github.com/Kiotolabs/ics2312-miniproject`
 
 Click **Fork** and create a copy in your own GitHub account.
 

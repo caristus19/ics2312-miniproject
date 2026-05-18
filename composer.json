@@ -1,5 +1,5 @@
 {
-    "name": "your-org/ics2312-miniproject",
+    "name": "kiotolabs/ics2312-miniproject",
     "description": "GitHub-based mini-project for ICS/ECE 2312 Structured Programming in PHP",
     "type": "project",
     "require": {},

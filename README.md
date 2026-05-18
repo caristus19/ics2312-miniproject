@@ -58,7 +58,7 @@ ics2312-miniproject/
 
 Fork this repository to your own GitHub account:
 
-`https://github.com/YOUR-ORG/ics2312-miniproject`
+`https://github.com/Kiotolabs/ics2312-miniproject`
 
 ### 2. Clone Your Fork
 
