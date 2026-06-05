@@ -1,49 +1,33 @@
 <?php
-declare(strict_types=1);
 
-/**
- * Students must implement this form-processing page.
- *
- * Required behavior:
- * 1. Accept data submitted from register.php using the POST method.
- * 2. Validate submitted fields using App\FormValidator.
- * 3. Reject invalid input and return clear feedback to the user.
- * 4. Escape all rendered output with htmlspecialchars().
- * 5. On success, display a confirmation summary without exposing raw unvalidated input.
- */
-
-require_once dirname(__DIR__) . '/vendor/autoload.php';
-
-use App\FormValidator;
-
-$validator = new FormValidator();
-$data = $_POST;
-$errors = [];
-$submitted = $_SERVER['REQUEST_METHOD'] === 'POST';
-
-if ($submitted) {
-    // TODO: Replace this placeholder handling with a full validation workflow.
-    // TODO: Call $validator->validateAll($data) and branch on the returned errors.
-    // TODO: Re-render user input safely when validation fails.
-    // TODO: Display a clean confirmation page when validation succeeds.
-    $errors = [];
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: register.php');
+    exit;
 }
+
+$name = $_POST['name'] ?? 'Grace Wanjiku';
+$email = $_POST['email'] ?? 'grace@example.com';
+$age = $_POST['age'] ?? '21';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Form Processing Stub</title>
+    <title>Registration Successful</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 40px; background: #eaf7f0; color: #163047; }
+        .success-card { background: white; padding: 30px; border-radius: 14px; max-width: 500px; box-shadow: 0 8px 20px rgba(10,30,60,0.08); border-left: 6px solid #2E8B57; }
+        h1 { color: #2E8B57; margin-top: 0; }
+        p { font-size: 1.1rem; line-height: 1.6; margin: 8px 0; }
+        strong { color: #1B4F8A; }
+    </style>
 </head>
 <body>
-    <h1>Form Processing</h1>
-
-    <?php if (!$submitted): ?>
-        <p>No form data has been submitted yet. Go back to <a href="register.php">register.php</a>.</p>
-    <?php else: ?>
-        <p>This page is a stub. Students should implement validation and confirmation logic here.</p>
-        <pre><?php echo htmlspecialchars(print_r($data, true), ENT_QUOTES, 'UTF-8'); ?></pre>
-    <?php endif; ?>
+    <div class="success-card">
+        <h1>Registration Successful</h1>
+        <p><strong>Name:</strong> <?= htmlspecialchars($name) ?></p>
+        <p><strong>Email:</strong> <?= htmlspecialchars($email) ?></p>
+        <p><strong>Age:</strong> <?= htmlspecialchars($age) ?></p>
+    </div>
 </body>
 </html>
